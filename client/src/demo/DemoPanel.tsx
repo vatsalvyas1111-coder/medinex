@@ -10,6 +10,7 @@ import { fmtLong, fmtTime, pad, parseStamp, useClockStore, useNow } from '../lib
 import type { Role, User } from '../lib/types';
 import { Avatar } from '../components/Avatar';
 import { spring } from '../lib/motion';
+import { DEMO_ACCOUNTS } from '../lib/mockBackend';
 
 interface DemoState { demoMode: boolean; now: string; offsetMinutes: number; accounts: (User & { role: Role })[]; ai: 'groq' | 'local'; connected: number }
 interface Trace { calls: { at: string; method: string; path: string; status: number; ms: number; table: string; rowId: number | null; write: boolean }[]; counts: Record<string, number>; lastDose: Record<string, unknown> | null; lastAudit: Record<string, unknown> | null; dbFile: string }
@@ -36,7 +37,7 @@ export function DemoPanel() {
 
   if (demo && !demo.demoMode) return null;
   const roles: Role[] = ['patient', 'tracker', 'reviewer'];
-  const acc = (r: Role) => demo?.accounts.find((a) => a.role === r);
+  const acc = (r: Role) => demo?.accounts?.find((a) => a.role === r) || DEMO_ACCOUNTS.find((a) => a.role === r);
   const onLogin = loc.pathname === '/login';
 
   return (

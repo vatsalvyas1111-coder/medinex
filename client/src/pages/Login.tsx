@@ -11,6 +11,7 @@ import { HeroLink } from '../components/Illustrations';
 import { Wordmark } from '../components/Logo';
 import { Avatar } from '../components/Avatar';
 import { Magnetic } from '../components/Magnetic';
+import { DEMO_ACCOUNTS } from '../lib/mockBackend';
 
 const ROLE_INFO: Record<Role, { label: string; blurb: string; icon: typeof UserRound }> = {
   patient: { label: 'Patient', blurb: 'Log doses in one tap', icon: UserRound },
@@ -23,13 +24,21 @@ export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [f, setF] = useState({ name: '', email: '', password: '', role: 'patient' as Role, dob: '' });
   const [error, setError] = useState('');
-  const { data: demo } = useQuery({ queryKey: ['demo-state'], queryFn: () => api.get<{ accounts: (User & { role: Role })[] }>('/demo/state'), retry: false });
+  const { data: demo } = useQuery({
+    queryKey: ['demo-state'],
+    queryFn: () => api.get<{ accounts: (User & { role: Role })[] }>('/demo/state'),
+    initialData: { accounts: DEMO_ACCOUNTS },
+    retry: false
+  });
   const done = ({ user }: { user: User }) => { qc.clear(); qc.setQueryData(['me'], user); nav(homeFor(user.role), { replace: true }); };
   const auth = useMutation({
     mutationFn: () => mode === 'login' ? api.post<{ user: User }>('/auth/login', { email: f.email, password: f.password }) : api.post<{ user: User }>('/auth/register', { name: f.name, email: f.email, password: f.password, role: f.role, dob: f.role === 'patient' && f.dob ? f.dob : undefined }),
     onSuccess: done, onError: (e) => setError(e instanceof ApiError ? e.message : 'Something went wrong'),
   });
-  const demoLogin = useMutation({ mutationFn: (role: Role) => api.post<{ user: User }>('/demo/switch-role', { role }), onSuccess: done, onError: (e) => setError(e instanceof ApiError ? e.message : 'Demo login failed') });
+  const demoLogin = useMutation({
+    mutationFn: (role: Role) => api.post<{ user: User }>('/demo/switch-role', { role }),
+    onSuccess: done, onError: (e) => setError(e instanceof ApiError ? e.message : 'Demo login failed')
+  });
 
   return (
     <div className="relative z-10 mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-5 py-10 lg:grid-cols-[1.05fr_1fr]">
@@ -68,8 +77,8 @@ export default function Login() {
         <div>
           <p className="mb-2.5 px-1 text-sm font-bold text-muted">Or try the demo. One click, no password.</p>
           <div className="grid gap-3 sm:grid-cols-3">
-            {(['patient', 'tracker', 'reviewer'] as Role[]).map((r, i) => { const a = demo?.accounts.find((x) => x.role === r); const I = ROLE_INFO[r].icon; return (
-              <motion.button key={r} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.08 }} whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }} disabled={!a || demoLogin.isPending} onClick={() => demoLogin.mutate(r)}
+            {(['patient', 'tracker', 'reviewer'] as Role[]).map((r, i) => { const a = demo?.accounts?.find((x) => x.role === r) || DEMO_ACCOUNTS.find((x) => x.role === r); const I = ROLE_INFO[r].icon; return (
+              <motion.button key={r} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.08 }} whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }} disabled={demoLogin.isPending} onClick={() => demoLogin.mutate(r)}
                 className="card card-lift flex flex-col items-start gap-3 p-4 text-left disabled:opacity-60" aria-label={`Try demo as ${ROLE_INFO[r].label}`}>
                 {a ? <Avatar seed={a.avatar_seed} name={a.name} size={46} /> : <span className="skeleton h-[46px] w-[46px] !rounded-full" />}
                 <div><p className="flex items-center gap-1.5 text-[15px] font-extrabold leading-tight">{a?.name ?? '…'}</p><p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-muted"><I className="h-3.5 w-3.5" />{ROLE_INFO[r].label} · {ROLE_INFO[r].blurb}</p></div>
