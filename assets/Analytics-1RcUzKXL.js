@@ -1,0 +1,1 @@
+import{j as s}from"./index-B9af-1rw.js";import{A as i}from"./AnalyticsView-Bay8tPI_.js";import"./Heatmap-DJaTQEsv.js";import"./Charts-BilaDkTg.js";function m(){return s.jsxs("div",{children:[s.jsx("h1",{className:"h-page mb-6",children:"Analytics"}),s.jsx(i,{})]})}export{m as default};
